@@ -274,7 +274,7 @@ function postNext(opts, keyAsBuffer, err, k, v, cb, next) {
     return next(err, k, v, cb)
 
   k = this.decode(k)
-  v = this.codec.decodeValue(v, opts)
+  // v = this.codec.decodeValue(v, opts)
   next(err, err ? k : keyAsBuffer ? k : k.toString('utf8'), v, cb)
 }
 
