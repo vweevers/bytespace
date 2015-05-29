@@ -531,6 +531,19 @@ test('explicit json valueEncoding', dbWrap(function (t, base) {
   })
 }))
 
+test('readstream on explicit json valueEncoding', dbWrap(function (t, base) {
+  var sp = subspace(base, 'sp', { valueEncoding: 'json' })
+  var v  = { an: 'object' }
+
+  sp.put('k', v, function (err) {
+    t.error(err)
+    readStreamToList(sp.createReadStream(), function(err, data){
+      t.error(err)
+      t.deepEqual(data, [ [ 'k', v ] ])
+      t.end()
+    })
+  })
+}))
 
 test('explicit json on base db valueEncoding', dbWrap({
   valueEncoding: 'json'
