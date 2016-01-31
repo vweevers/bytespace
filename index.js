@@ -9,6 +9,7 @@ var xtend = require('xtend')
 
 var Batch = require('./batch')
 var Namespace = require('./namespace')
+var Iterator = require('./iterator')
 var NOT_FOUND = /notfound/i
 
 module.exports = Bytespace
@@ -59,6 +60,7 @@ function Bytespace(db, ns, opts) {
   })
 
   // forward open and close events from base db w/o affecting listener count
+  // TODO: this is never called??
   function forwardOpen() {
     db.once('open', function () {
       space.emit('open', space)
@@ -173,11 +175,11 @@ function Bytespace(db, ns, opts) {
       cb = getCallback(opts, cb)
       opts = getOptions(opts)
 
-      function add(op) {    
-        if (op === false) {    
-          return delete ops[i]   
-        }    
-        ops.push(op)   
+      function add(op) {
+        if (op === false) {
+          return delete ops[i]
+        }
+        ops.push(op)
       }
 
       try {
@@ -339,6 +341,17 @@ function Bytespace(db, ns, opts) {
       return db.createLiveStream(o).pipe(decodeStream(opts))
     }
     if (db.liveStream) space.liveStream = space.createLiveStream
+  }
+
+  // Prefer direct *DOWN iterator
+  if (db.db && typeof db.db.iterator === 'function') {
+    space.iterator = function(opts) {
+      return new Iterator(db.db, ns, vOpts(opts))
+    }
+  } else if (typeof db.iterator === 'function') {
+    space.iterator = function(opts) {
+      return new Iterator(db, ns, vOpts(opts))
+    }
   }
 }
 
