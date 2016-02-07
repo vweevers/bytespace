@@ -218,14 +218,16 @@ function Bytespace(db, ns, opts) {
 
           // apply postcommit hooks for ops, setting encoded keys to initial state
           try {
-            if (ns.posthooks.length) {
-              ops.forEach(function (op) {
+            ops.forEach(function (op) {
+              var ns = op.prefix.namespace
+
+              if (ns.posthooks.length) {
                 ns.trigger(ns.posthooks, op.prefix, [ op ])
-              })
-            }
+              }
+            })
           }
           catch (err) {
-            cb(err)
+            return cb(err)
           }
 
           cb()
