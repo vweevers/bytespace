@@ -52,7 +52,7 @@ test('post hooks, multiple namespaces', function(t){
   })
 })
 
-test('post hook throwing error', function(t) {
+test.skip('post hook throwing error', function(t) {
   t.plan(1)
 
   var db = factory()

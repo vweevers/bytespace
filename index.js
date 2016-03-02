@@ -181,61 +181,51 @@ function Bytespace(db, ns, opts) {
         ops.push(op)
       }
 
-      try {
-        // encode batch ops and apply precommit hooks
-        for (var i = 0, len = ops.length; i < len; i++) {
-          var op = ops[i]
+      // encode batch ops and apply precommit hooks
+      for (var i = 0, len = ops.length; i < len; i++) {
+        var op = ops[i]
 
-          addEncodings(op, op.prefix)
+        addEncodings(op, op.prefix)
 
-          op.prefix || (op.prefix = space)
+        op.prefix || (op.prefix = space)
 
-          var ns = op.prefix.namespace
-          if (!(ns instanceof Namespace))
-            return cb('Unknown prefix in batch commit')
+        var ns = op.prefix.namespace
+        if (!(ns instanceof Namespace))
+          return cb('Unknown prefix in batch commit')
 
-          if (ns.prehooks.length) {
-            ns.trigger(ns.prehooks, op.prefix, [ op, add, ops ])
-          }
+        if (ns.prehooks.length) {
+          ns.trigger(ns.prehooks, op.prefix, [ op, add, ops ])
         }
+      }
 
-        if (!ops.length) return cb()
+      if (!ops.length) return cb()
 
-        var encodedOps = ops.map(function (op) {
-          return {
-            type: op.type,
-            key: op.prefix.namespace.encode(op.key, opts, op),
-            keyEncoding: ns.keyEncoding,
-            value: op.value,
-            // TODO: multilevel json serialization issue?
-            valueEncoding: op.valueEncoding,
-            sync: op.sync
+      var encodedOps = ops.map(function (op) {
+        return {
+          type: op.type,
+          key: op.prefix.namespace.encode(op.key, opts, op),
+          keyEncoding: ns.keyEncoding,
+          value: op.value,
+          // TODO: multilevel json serialization issue?
+          valueEncoding: op.valueEncoding,
+          sync: op.sync
+        }
+      })
+
+      db.batch(encodedOps, kvOpts(opts), function (err) {
+        if (err) return cb(err)
+
+        // apply postcommit hooks for ops, setting encoded keys to initial state
+        ops.forEach(function (op) {
+          var ns = op.prefix.namespace
+
+          if (ns.posthooks.length) {
+            ns.trigger(ns.posthooks, op.prefix, [ op ])
           }
         })
 
-        db.batch(encodedOps, kvOpts(opts), function (err) {
-          if (err) return cb(err)
-
-          // apply postcommit hooks for ops, setting encoded keys to initial state
-          try {
-            ops.forEach(function (op) {
-              var ns = op.prefix.namespace
-
-              if (ns.posthooks.length) {
-                ns.trigger(ns.posthooks, op.prefix, [ op ])
-              }
-            })
-          }
-          catch (err) {
-            return cb(err)
-          }
-
-          cb()
-        })
-      }
-      catch (err) {
-        process.nextTick(cb.bind(null, err))
-      }
+        cb()
+      })
     }
 
     space.pre = function (range, hook) {
@@ -287,18 +277,14 @@ function Bytespace(db, ns, opts) {
     var stream = Transform({ objectMode: true })
 
     stream._transform = function (data, _, cb) {
-      try {
-        // decode keys even when keys or values aren't requested specifically
-        if ((opts.keys && opts.values) || (!opts.keys && !opts.values)) {
-          data.key = ns.decode(data.key, opts)
-        }
-        else if (opts.keys) {
-          data = ns.decode(data, opts)
-        }
+      // decode keys even when keys or values aren't requested specifically
+      if ((opts.keys && opts.values) || (!opts.keys && !opts.values)) {
+        data.key = ns.decode(data.key, opts)
       }
-      catch (err) {
-        return cb(err)
+      else if (opts.keys) {
+        data = ns.decode(data, opts)
       }
+
       cb(null, data)
     }
 
