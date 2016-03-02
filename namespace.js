@@ -40,10 +40,6 @@ Namespace.prototype.decode = function (k, opts) {
   else if (!Buffer.isBuffer(k))
     throw new TypeError('Key must be encoded as a buffer')
 
-  // TODO: throw?
-  if (!this.contains(k))
-    return k
-
   // slice off prefix and run through codec
   var encoded = k.slice(this.buffer.length)
   var coerce = this.codec.keyAsBuffer(opts) ? Buffer : String
