@@ -16,23 +16,19 @@ function Iterator(db, ns, opts) {
   this.iterator = db.iterator(xtend(opts, { valueEncoding: 'id' }))
 }
 
-Iterator.prototype.next = function(cb) {
-  this.iterator.next(function(err, key, value) {
+Iterator.prototype.next = function outerNext(cb) {
+  this.iterator.next(function innerNext(err, key, value) {
     if (err) return cb(err)
     else if (key === undefined) return cb()
 
-    try {
-      key = this.opts.keys ? this.namespace.decode(key, this.opts) : null
-      value = this.opts.values ? this.codec.decodeValue(value, this.opts) : null
-    } catch(err) {
-      return cb(err)
-    }
+    key = this.opts.keys ? this.namespace.decode(key, this.opts) : null
+    value = this.opts.values ? this.codec.decodeValue(value, this.opts) : null
 
     cb(null, key, value)
   }.bind(this))
 }
 
-Iterator.prototype.end = function(cb) {
+Iterator.prototype.end = function outerEnd(cb) {
   this.iterator.end(cb)
 }
 
