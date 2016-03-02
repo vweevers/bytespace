@@ -42,8 +42,8 @@ Namespace.prototype.decode = function (k, opts) {
 
   // slice off prefix and run through codec
   var encoded = k.slice(this.buffer.length)
-  var coerce = this.codec.keyAsBuffer(opts) ? Buffer : String
-  return this.codec.decodeKey(coerce(encoded))
+  var coerced = this.codec.keyAsBuffer(opts) ? encoded : String(encoded)
+  return this.codec.decodeKey(coerced)
 }
 
 Namespace.prototype.encode = function (k, opts, batchOpts) {
