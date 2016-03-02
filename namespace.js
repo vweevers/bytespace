@@ -54,11 +54,11 @@ Namespace.prototype.encode = function (k, opts, batchOpts) {
     // noop
   }
   else if (k === UPPER_BOUND) {
-    buffer = Buffer.concat([ buffer, k ])
+    buffer = Buffer.concat([ buffer, k ], buffer.length + k.length)
   }
   else {
-    var encoded = this.codec.encodeKey(k, opts, batchOpts)
-    buffer = Buffer.concat([ buffer, new Buffer(encoded) ])
+    var encoded = new Buffer(this.codec.encodeKey(k, opts, batchOpts))
+    buffer = Buffer.concat([ buffer, encoded ], buffer.length + encoded.length)
   }
 
   return this.hex ? buffer.toString('hex') : buffer
